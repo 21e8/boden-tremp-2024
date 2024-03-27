@@ -142,14 +142,14 @@ export default function Home() {
     amount: JSBI.BigInt(1 * 10 ** 6),
     inputMint: MINTS.tremp,
     outputMint: new PublicKey(MINTS["usdc"]),
-    slippageBps: 50,
+    slippageBps: 1000,
     debounceTime: 1000,
   });
   const { quoteResponseMeta: bodenResponseMeta } = useJupiter({
     amount: JSBI.BigInt(1 * 10 ** 6),
     inputMint: MINTS.boden,
     outputMint: new PublicKey(MINTS["usdc"]),
-    slippageBps: 50,
+    slippageBps: 1000,
     debounceTime: 1000,
   });
   const outAmtParsedBoden = JSBI.BigInt(
@@ -225,7 +225,7 @@ export default function Home() {
   useEffect(() => {
     if (trempResponseMeta) {
       const bnOut = new BigNumber(
-        trempResponseMeta.quoteResponse.outAmount.toString()
+        trempResponseMeta.quoteResponse.otherAmountThreshold.toString()
       );
       const res = bnOut.dividedBy(10 ** 3).toString();
       setTrempPrice(res);
@@ -235,7 +235,7 @@ export default function Home() {
   useEffect(() => {
     if (bodenResponseMeta) {
       const bnOut = new BigNumber(
-        bodenResponseMeta.quoteResponse.outAmount.toString()
+        bodenResponseMeta.quoteResponse.otherAmountThreshold.toString()
       );
       const res = bnOut.dividedBy(10 ** 3).toString();
       setBodenPrice(res);
@@ -310,6 +310,7 @@ export default function Home() {
           color: "#DC2626",
         },
       ]);
+      console.log(bodenPrice, bodenSupply, trempPrice, trempSupply);
       setPriceChartData([
         {
           name: "Boden",
