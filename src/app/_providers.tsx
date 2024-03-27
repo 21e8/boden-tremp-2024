@@ -35,18 +35,16 @@ const JupiterWrapper = ({ children }: { children: React.ReactNode }) => {
   //   fetchPlatformFeeAccounts();
   // }, [connection]);
   return (
-    publicKey && (
-      <JupiterProvider
-        connection={connection}
-        userPublicKey={publicKey || Keypair.generate().publicKey}
-        // platformFeeAndAccounts={{
-        //   feeAccounts: platformFeeAccounts,
-        //   feeBps: 100,
-        // }}
-      >
-        {children}
-      </JupiterProvider>
-    )
+    <JupiterProvider
+      connection={connection}
+      userPublicKey={publicKey || Keypair.generate().publicKey}
+      // platformFeeAndAccounts={{
+      //   feeAccounts: platformFeeAccounts,
+      //   feeBps: 100,
+      // }}
+    >
+      {children}
+    </JupiterProvider>
   );
 };
 
