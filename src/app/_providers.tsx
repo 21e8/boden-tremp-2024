@@ -15,7 +15,7 @@ import {
   useWallet,
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { getPlatformFeeAccounts } from "@jup-ag/core";
+// import { getPlatformFeeAccounts } from "@jup-ag/core";
 
 const JupiterWrapper = ({ children }: { children: React.ReactNode }) => {
   const { connection } = useConnection();
@@ -24,26 +24,25 @@ const JupiterWrapper = ({ children }: { children: React.ReactNode }) => {
     string,
     PublicKey
   > | null>(null);
-  useEffect(() => {
-    const fetchPlatformFeeAccounts = async () => {
-      const response = await getPlatformFeeAccounts(
-        connection,
-        new PublicKey(process.env.NEXT_PUBLIC_FEE_ACCOUNT!)
-      );
-      setPlatformFeeAccounts(response);
-    };
-    fetchPlatformFeeAccounts();
-  }, [connection]);
+  // useEffect(() => {
+  //   const fetchPlatformFeeAccounts = async () => {
+  //     const response = await getPlatformFeeAccounts(
+  //       connection,
+  //       new PublicKey(process.env.NEXT_PUBLIC_FEE_ACCOUNT!)
+  //     );
+  //     setPlatformFeeAccounts(response);
+  //   };
+  //   fetchPlatformFeeAccounts();
+  // }, [connection]);
   return (
-    platformFeeAccounts &&
     publicKey && (
       <JupiterProvider
         connection={connection}
         userPublicKey={publicKey || Keypair.generate().publicKey}
-        platformFeeAndAccounts={{
-          feeAccounts: platformFeeAccounts,
-          feeBps: 100,
-        }}
+        // platformFeeAndAccounts={{
+        //   feeAccounts: platformFeeAccounts,
+        //   feeBps: 100,
+        // }}
       >
         {children}
       </JupiterProvider>
