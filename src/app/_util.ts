@@ -10,6 +10,8 @@ import {
   TokenInvalidOwnerError,
   Account,
 } from "@mrgnlabs/mrgn-common";
+import JSBI from "jsbi";
+import BigNumber from "bignumber.js";
 export async function getAssociatedTokenAccount(
   connection: Connection,
   mint: PublicKey,
@@ -55,4 +57,43 @@ export const transformedTvl = (_tvl = 0) => {
   if (Math.abs(_tvl) > 999_999_999)
     return `${(_tvl / 1_000_000_000).toFixed(2)}b`;
   return _tvl.toFixed(2);
+};
+
+export const isZeroDecimal = (value: string) => {
+  return (
+    value.startsWith("0.0") &&
+    value
+      .split("0.0")[1]
+      .split("")
+      .every((char) => char === "0")
+  );
+};
+
+export const exceedsDecimals = (value: string, decimals = 18) => {
+  return value.split(".")[1].length > decimals;
+};
+
+export const trimDecimals = (value: string, decimals = 18) => {
+  return value.split(".")[0] + "." + value.split(".")[1].slice(0, decimals);
+};
+
+export const clampValue = ({
+  value,
+  max,
+  min = JSBI.BigInt(0),
+  decimals = 18,
+}: {
+  value: string;
+  max: JSBI;
+  min?: JSBI;
+  decimals?: number;
+}) => {
+  let amount_wei = new BigNumber(parseFloat(value)).multipliedBy(
+    new BigNumber(10).pow(decimals)
+  );
+  const bnMin = new BigNumber(min.toString());
+  const bnMax = new BigNumber(max.toString());
+  if (amount_wei.isLessThan(bnMin)) amount_wei = new BigNumber(0);
+  if (amount_wei.isGreaterThan(bnMax)) amount_wei = new BigNumber(max.toString());
+  return amount_wei.dividedBy(new BigNumber(10).pow(decimals)).toString();
 };

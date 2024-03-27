@@ -12,7 +12,14 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import Image from "next/image";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
-import { getAssociatedTokenAccount, transformedTvl } from "./_util";
+import {
+  clampValue,
+  exceedsDecimals,
+  getAssociatedTokenAccount,
+  isZeroDecimal,
+  transformedTvl,
+  trimDecimals,
+} from "./_util";
 import { Cell, Pie, PieChart } from "recharts";
 import { BigNumber } from "bignumber.js";
 const RADIAN = Math.PI / 180;
@@ -492,6 +499,83 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputTokenTremp, outAmtParsedTremp, trempResponseMetaTx, wallet]);
 
+  const trempButtonDisabled = useMemo(() => {
+    return (
+      (!fetchedTrempResponseMeta &&
+        inputTrempAmount !== "0" &&
+        inputTrempAmount !== "") ||
+      inputTrempAmount === "0" ||
+      inputTrempAmount === "" ||
+      voteTrempLoading
+    );
+  }, [fetchedTrempResponseMeta, inputTrempAmount, voteTrempLoading]);
+
+  const handleDispatchTrempAmount = useCallback(
+    (value: string) => {
+      if (value === "") {
+        setInputTrempAmount("");
+        return;
+      }
+      if (isZeroDecimal(value)) {
+        if (exceedsDecimals(value, DECIMALS[inputTokenTremp])) {
+          setInputTrempAmount(trimDecimals(value, DECIMALS[inputTokenTremp]));
+          return;
+        }
+        setInputTrempAmount(value);
+        return;
+      }
+      const max =
+        inputTokenTremp === "sol"
+          ? solBalance
+          : inputTokenTremp === "boden"
+          ? bodenBalance
+          : usdcBalance;
+      const jsbiMax = new BigNumber(
+        max * 10 ** DECIMALS[inputTokenTremp]
+      ).toFixed(0);
+      const clamped = clampValue({
+        value,
+        max: JSBI.BigInt(jsbiMax),
+        decimals: DECIMALS[inputTokenTremp],
+      });
+      setInputTrempAmount(clamped);
+    },
+    [bodenBalance, inputTokenTremp, solBalance, usdcBalance]
+  );
+
+  const handleDispatchBodenAmount = useCallback(
+    (value: string) => {
+      if (value === "") {
+        setInputBodenAmount("");
+        return;
+      }
+      if (isZeroDecimal(value)) {
+        if (exceedsDecimals(value, DECIMALS[inputTokenBoden])) {
+          setInputBodenAmount(trimDecimals(value, DECIMALS[inputTokenBoden]));
+          return;
+        }
+        setInputBodenAmount(value);
+        return;
+      }
+      const max =
+        inputTokenBoden === "sol"
+          ? solBalance
+          : inputTokenBoden === "tremp"
+          ? trempBalance
+          : usdcBalance;
+      const jsbiMax = new BigNumber(
+        max * 10 ** DECIMALS[inputTokenBoden]
+      ).toFixed(0);
+      const clamped = clampValue({
+        value,
+        max: JSBI.BigInt(jsbiMax),
+        decimals: DECIMALS[inputTokenBoden],
+      });
+      setInputBodenAmount(clamped);
+    },
+    [inputTokenBoden, solBalance, trempBalance, usdcBalance]
+  );
+
   return (
     <>
       <div className="w-full max-w-7xl mx-auto p-8 flex flex-col">
@@ -596,7 +680,7 @@ export default function Home() {
                     placeholder={currentMax}
                     value={inputBodenAmount}
                     onChange={(e) => {
-                      setInputBodenAmount(e.target.value);
+                      handleDispatchBodenAmount(e.target.value);
                       setFetchedBodenResponseMeta(undefined);
                     }}
                     type="number"
@@ -718,7 +802,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-row bg-white text-black px-3 py-2 rounded justify-center items-center">
                   <select
-                    value={inputTokenBoden}
+                    value={inputTokenTremp}
                     onChange={(e) => setInputTokenTremp(e.target.value)}
                   >
                     <option value={"sol"}>SOL</option>
@@ -729,7 +813,10 @@ export default function Home() {
                     className="w-[150px] text-right"
                     placeholder={currentMax}
                     value={inputTrempAmount}
-                    onChange={(e) => setInputTrempAmount(e.target.value)}
+                    onChange={(e) => {
+                      handleDispatchTrempAmount(e.target.value);
+                      setFetchedTrempResponseMeta(undefined);
+                    }}
                     type="number"
                   />{" "}
                 </div>
@@ -749,16 +836,15 @@ export default function Home() {
               </div>
               <button
                 onClick={() => commitTransactionTremp()}
+                disabled={trempButtonDisabled}
                 className={
                   "flex px-3 py-2 bg-red-600 border border-red-800 text-white rounded " +
-                  ((!fetchedTrempResponseMeta && inputTrempAmount !== "0") ||
-                  inputTrempAmount === "0" ||
-                  voteTrempLoading
-                    ? "opacity-50"
-                    : "")
+                  (trempButtonDisabled ? "opacity-50" : "")
                 }
               >
-                {!fetchedTrempResponseMeta && inputTrempAmount !== "0"
+                {!fetchedTrempResponseMeta &&
+                inputTrempAmount !== "0" &&
+                inputTrempAmount !== ""
                   ? "Fetching quote..."
                   : voteTrempLoading
                   ? "Voting..."
