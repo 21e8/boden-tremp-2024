@@ -22,6 +22,11 @@ import {
 } from "./_util";
 import { Cell, Pie, PieChart } from "recharts";
 import { BigNumber } from "bignumber.js";
+import { Coming_Soon } from "next/font/google";
+import localFont from "next/font/local";
+
+const comingSoon = Coming_Soon({ subsets: ["latin"], weight: ["400"] });
+const adigiana = localFont({ src: "../../public/AdigianaUI.ttf" });
 const RADIAN = Math.PI / 180;
 const renderMcapLabel = (t: {
   cx: number;
@@ -579,21 +584,21 @@ export default function Home() {
   return (
     <>
       <div className="w-full max-w-7xl mx-auto p-8 flex flex-col">
-        <div className="w-full text-center md:grid grid-cols-3 items-center mb-8">
+        <div className="text-center md:grid grid-cols-3 items-center mb-8 bg-red-600 p-4 rounded-2xl left-6 right-6 fixed z-10">
           <div></div>
           <h1 className="text-3xl">Boden vs Tremp 2024</h1>
           <div className="flex flex-row">
-            <div className="mx-auto md:ml-auto my-4 md:my-0">
+            <div className="mx-auto md:ml-auto md:mr-0 my-4 md:my-0">
               {" "}
               {mounted && <WalletMultiButton />}
             </div>
           </div>
         </div>
         <div
-          className="flex flex-col md:grid grid-cols-3 text-center mt-8 gap-8 mb-8"
+          className="flex flex-col md:grid grid-cols-3 text-center gap-8 mb-8 bg-[rgb(1,73,171)] p-4 rounded-2xl mt-24"
           style={{ gridTemplateColumns: "1fr 50px 1fr" }}
         >
-          <div className="flex flex-col gap-4">
+          <div className={`flex flex-col gap-4 ${comingSoon.className}`}>
             <h2 className="text-2xl">Jeo Boden</h2>
             <div className="flex flex-col items-center justify-center">
               <div className="rounded-full overflow-hidden bg-blue-600 h-[200px] w-[200px]  ring-4 ring-white">
@@ -727,7 +732,7 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center text-3xl">
             vs.
           </div>
-          <div className="flex flex-col gap-4">
+          <div className={`flex flex-col gap-4 ${adigiana.className}`}>
             <h2 className="text-2xl">Doland Tremp</h2>
             <div className="flex flex-col items-center justify-center">
               <div className="rounded-full overflow-hidden bg-red-600 h-[200px] w-[200px] ring-4 ring-white">

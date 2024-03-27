@@ -31,3 +31,11 @@ body {
     text-wrap: balance;
   }
 }
+
+.wallet-adapter-button-trigger {
+  @apply bg-white text-zinc-800 !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  @apply bg-zinc-100 !important;
+}
