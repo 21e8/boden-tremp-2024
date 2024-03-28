@@ -18,6 +18,8 @@ type Config = {
   author: string;
   githubRepo: string;
   twitter: string;
+
+  slippageBps: string
 };
 
 export const config: Config = {
@@ -40,4 +42,5 @@ export const config: Config = {
   author: "0xAlice",
   githubRepo: "https://github.com/21e8/boden-tremp-2024",
   twitter: "https://twitter.com/thereal0xalice",
+  slippageBps: "10000"
 };

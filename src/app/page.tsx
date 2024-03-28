@@ -233,11 +233,12 @@ export default function Home() {
   }, [connection]);
 
   useEffect(() => {
-    (async () => {
+    const itv = setInterval(async () => {
       const price = await coingecko.simplePrice({ vs_currencies: 'usd', ids: 'jeo-boden,donald-tremp' });
       setAPrice(`${price['jeo-boden'].usd.toFixed(3)}`);
       setBPrice(`${price['donald-tremp'].usd.toFixed(3)}`);
-    })()
+    }, 1000 * 60);
+    return () => clearInterval(itv);
   }, []);
 
   useEffect(() => {
@@ -274,7 +275,6 @@ export default function Home() {
           if (balance.value.uiAmount) {
             setABalance(balance.value.uiAmount);
           }
-          console.log(balance);
         }
         const bAssociatedToken = await getAssociatedTokenAccount(
           connection,
@@ -288,7 +288,6 @@ export default function Home() {
           if (balance.value.uiAmount) {
             setBBalance(balance.value.uiAmount);
           }
-          console.log(balance);
         }
       }
     })();
@@ -308,7 +307,6 @@ export default function Home() {
           color: config.bColor,
         },
       ]);
-      console.log(aPrice, aSupply, bPrice, bSupply);
       setPriceChartData([
         {
           name: config.aDisplayNameShort,
@@ -393,7 +391,7 @@ export default function Home() {
         inputMint: MINTS[aInputToken].toString(),
         outputMint: MINTS[config.aDescriptor].toString(),
         amount: outAmtParsedA.toString(),
-        slippageBps: "10000",
+        slippageBps: config.slippageBps,
       }).then(async (updatedMeta) => {
         try {
           if (updatedMeta.error) {
@@ -474,7 +472,7 @@ export default function Home() {
         inputMint: MINTS[bInputToken].toString(),
         outputMint: MINTS[config.bDescriptor].toString(),
         amount: outAmtParsedB.toString(),
-        slippageBps: "10000",
+        slippageBps: config.slippageBps,
       }).then(async (updatedMeta) => {
         try {
           if (updatedMeta.error) {
