@@ -6,6 +6,7 @@ type Config = {
   aColor: string;
   aDecimals: number;
   aTicker: string;
+  aCoingeckoId: string;
 
   bDisplayNameShort: string;
   bDisplayNameLong: string;
@@ -14,12 +15,13 @@ type Config = {
   bColor: string;
   bDecimals: number;
   bTicker: string;
+  bCoingeckoId: string;
 
   author: string;
   githubRepo: string;
   twitter: string;
 
-  slippageBps: string
+  slippageBps: string;
 };
 
 export const config: Config = {
@@ -30,6 +32,7 @@ export const config: Config = {
   aColor: "rgb(1,73,171)",
   aDecimals: 9,
   aTicker: "BODEN",
+  aCoingeckoId: "jeo-boden",
 
   bDisplayNameShort: "Tremp",
   bDisplayNameLong: "Doland Tremp",
@@ -38,9 +41,10 @@ export const config: Config = {
   bColor: "rgb(220,38,38)",
   bDecimals: 9,
   bTicker: "TREMP",
+  bCoingeckoId: "donald-tremp",
 
   author: "0xAlice",
   githubRepo: "https://github.com/21e8/boden-tremp-2024",
   twitter: "https://twitter.com/thereal0xalice",
-  slippageBps: "10000"
+  slippageBps: "10000",
 };

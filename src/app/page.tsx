@@ -25,7 +25,7 @@ import { BigNumber } from "bignumber.js";
 import { Coming_Soon } from "next/font/google";
 import localFont from "next/font/local";
 import { config } from "./_config";
-import { CoinGeckoClient } from 'coingecko-api-v3';
+import { CoinGeckoClient } from "coingecko-api-v3";
 const coingecko = new CoinGeckoClient({
   timeout: 10000,
   autoRetry: true,
@@ -146,21 +146,6 @@ export default function Home() {
   const [voteBLoading, setVoteBLoading] = useState(false);
   const [fetchedAResponseMeta, setFetchedAResponseMeta] = useState<any>();
   const [fetchedBResponseMeta, setFetchedBResponseMeta] = useState<any>();
-  const { quoteResponseMeta: bResponseMeta } = useJupiter({
-    amount: JSBI.BigInt(1 * 10 ** DECIMALS["usdc"]),
-    inputMint: MINTS[config.bDescriptor],
-    outputMint: new PublicKey(MINTS["usdc"]),
-    slippageBps: 1000,
-    debounceTime: 1000,
-  });
-  const { quoteResponseMeta: aResponseMeta } = useJupiter({
-    amount: JSBI.BigInt(1 * 10 ** DECIMALS["usdc"]),
-    inputMint: MINTS[config.aDescriptor],
-    outputMint: new PublicKey(MINTS["usdc"]),
-    slippageBps: 1000,
-    debounceTime: 1000,
-  });
-
   const outAmtParsedA = JSBI.BigInt(
     new BigNumber(aInputAmount || "0")
       .multipliedBy(new BigNumber(10).pow(DECIMALS[aInputToken]))
@@ -234,9 +219,12 @@ export default function Home() {
 
   useEffect(() => {
     const itv = setInterval(async () => {
-      const price = await coingecko.simplePrice({ vs_currencies: 'usd', ids: 'jeo-boden,donald-tremp' });
-      setAPrice(`${price['jeo-boden'].usd.toFixed(3)}`);
-      setBPrice(`${price['donald-tremp'].usd.toFixed(3)}`);
+      const price = await coingecko.simplePrice({
+        vs_currencies: "usd",
+        ids: [config.aCoingeckoId, config.bCoingeckoId].join(","),
+      });
+      setAPrice(`${price[config.aCoingeckoId].usd.toFixed(3)}`);
+      setBPrice(`${price[config.bCoingeckoId].usd.toFixed(3)}`);
     }, 1000 * 60);
     return () => clearInterval(itv);
   }, []);
