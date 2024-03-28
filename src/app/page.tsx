@@ -602,7 +602,7 @@ export default function Home() {
   return (
     <>
       <div className="w-full max-w-7xl mx-auto p-8 flex flex-col">
-        <div className="text-center items-center mb-8 bg-red-600 p-4 rounded-2xl left-0 right-0 top-0 w-full fixed z-10">
+        <div className="text-center items-center mb-8 bg-black p-4 border-b-4 border-red-600 left-0 right-0 top-0 w-full fixed z-10">
           <div className="w-full max-w-7xl mx-auto flex flex-col md:grid grid-cols-3 ">
             <div></div>
             <h1 className="text-3xl">
