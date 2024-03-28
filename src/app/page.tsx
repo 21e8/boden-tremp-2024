@@ -25,6 +25,11 @@ import { BigNumber } from "bignumber.js";
 import { Coming_Soon } from "next/font/google";
 import localFont from "next/font/local";
 import { config } from "./_config";
+import { CoinGeckoClient } from 'coingecko-api-v3';
+const coingecko = new CoinGeckoClient({
+  timeout: 10000,
+  autoRetry: true,
+});
 
 const comingSoon = Coming_Soon({ subsets: ["latin"], weight: ["400"] });
 const adigiana = localFont({ src: "../../public/AdigianaUI.ttf" });
@@ -226,27 +231,14 @@ export default function Home() {
       }
     });
   }, [connection]);
-  console.log({ aResponseMeta, bResponseMeta });
-  useEffect(() => {
-    if (bResponseMeta) {
-      const bnOut = new BigNumber(
-        bResponseMeta.quoteResponse.outAmount.toString()
-      );
-      const res = bnOut.dividedBy(10 ** (config.bDecimals - DECIMALS['usdc'])).toString();
-      setBPrice(res);
-    }
-  }, [connection, bResponseMeta]);
 
   useEffect(() => {
-    if (aResponseMeta) {
-      debugger
-      const bnOut = new BigNumber(
-        aResponseMeta.quoteResponse.outAmount.toString()
-      );
-      const res = bnOut.dividedBy(10 ** 3).toString();
-      setAPrice(res);
-    }
-  }, [aResponseMeta, connection]);
+    (async () => {
+      const price = await coingecko.simplePrice({ vs_currencies: 'usd', ids: 'jeo-boden,donald-tremp' });
+      setAPrice(`${price['jeo-boden'].usd.toFixed(3)}`);
+      setBPrice(`${price['donald-tremp'].usd.toFixed(3)}`);
+    })()
+  }, []);
 
   useEffect(() => {
     (async () => {
