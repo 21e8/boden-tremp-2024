@@ -142,19 +142,20 @@ export default function Home() {
   const [fetchedAResponseMeta, setFetchedAResponseMeta] = useState<any>();
   const [fetchedBResponseMeta, setFetchedBResponseMeta] = useState<any>();
   const { quoteResponseMeta: bResponseMeta } = useJupiter({
-    amount: JSBI.BigInt(1 * 10 ** 6),
+    amount: JSBI.BigInt(1 * 10 ** DECIMALS["usdc"]),
     inputMint: MINTS[config.bDescriptor],
     outputMint: new PublicKey(MINTS["usdc"]),
     slippageBps: 1000,
     debounceTime: 1000,
   });
   const { quoteResponseMeta: aResponseMeta } = useJupiter({
-    amount: JSBI.BigInt(1 * 10 ** 6),
+    amount: JSBI.BigInt(1 * 10 ** DECIMALS["usdc"]),
     inputMint: MINTS[config.aDescriptor],
     outputMint: new PublicKey(MINTS["usdc"]),
     slippageBps: 1000,
     debounceTime: 1000,
   });
+
   const outAmtParsedA = JSBI.BigInt(
     new BigNumber(aInputAmount || "0")
       .multipliedBy(new BigNumber(10).pow(DECIMALS[aInputToken]))
@@ -225,21 +226,22 @@ export default function Home() {
       }
     });
   }, [connection]);
-
+  console.log({ aResponseMeta, bResponseMeta });
   useEffect(() => {
     if (bResponseMeta) {
       const bnOut = new BigNumber(
-        bResponseMeta.quoteResponse.otherAmountThreshold.toString()
+        bResponseMeta.quoteResponse.outAmount.toString()
       );
-      const res = bnOut.dividedBy(10 ** 3).toString();
+      const res = bnOut.dividedBy(10 ** (config.bDecimals - DECIMALS['usdc'])).toString();
       setBPrice(res);
     }
   }, [connection, bResponseMeta]);
 
   useEffect(() => {
     if (aResponseMeta) {
+      debugger
       const bnOut = new BigNumber(
-        aResponseMeta.quoteResponse.otherAmountThreshold.toString()
+        aResponseMeta.quoteResponse.outAmount.toString()
       );
       const res = bnOut.dividedBy(10 ** 3).toString();
       setAPrice(res);

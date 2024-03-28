@@ -26,7 +26,7 @@ export const config: Config = {
   aDescriptor: "boden",
   aMint: "3psH1Mj1f7yUfaD5gh6Zj7epE8hhrMkMETgv5TshQA4o",
   aColor: "rgb(1,73,171)",
-  aDecimals: 6,
+  aDecimals: 9,
   aTicker: "BODEN",
 
   bDisplayNameShort: "Tremp",
@@ -34,7 +34,7 @@ export const config: Config = {
   bDescriptor: "tremp",
   bMint: "FU1q8vJpZNUrmqsciSjp8bAKKidGsLmouB8CBdf8TKQv",
   bColor: "rgb(220,38,38)",
-  bDecimals: 6,
+  bDecimals: 9,
   bTicker: "TREMP",
 
   author: "0xAlice",
