@@ -24,6 +24,7 @@ import { Cell, Pie, PieChart } from "recharts";
 import { BigNumber } from "bignumber.js";
 import { Coming_Soon } from "next/font/google";
 import localFont from "next/font/local";
+import { config } from "./_config";
 
 const comingSoon = Coming_Soon({ subsets: ["latin"], weight: ["400"] });
 const adigiana = localFont({ src: "../../public/AdigianaUI.ttf" });
@@ -105,109 +106,99 @@ const renderHolderLabel = (t: {
   );
 };
 
-type TokenAccount = {
-  address: string;
-  mint: string;
-  owner: string;
-  amount: number;
-  delegated_amount: number;
-  frozen: boolean;
-};
 const MINTS: Record<string, PublicKey> = {
-  tremp: new PublicKey("FU1q8vJpZNUrmqsciSjp8bAKKidGsLmouB8CBdf8TKQv"),
-  boden: new PublicKey("3psH1Mj1f7yUfaD5gh6Zj7epE8hhrMkMETgv5TshQA4o"),
+  [config.aDescriptor]: new PublicKey(config.aMint),
+  [config.bDescriptor]: new PublicKey(config.bMint),
   sol: new PublicKey("So11111111111111111111111111111111111111112"),
   usdc: new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
 };
 const DECIMALS: Record<string, number> = {
   sol: 9,
   usdc: 6,
-  boden: 6,
-  tremp: 6,
+  [config.aDescriptor]: config.aDecimals,
+  [config.bDescriptor]: config.bDecimals,
 };
 export default function Home() {
   const wallet = useWallet();
   const [mounted, setMounted] = useState(false);
   const { connection } = useConnection();
-  const [bodenPrice, setBodenPrice] = useState("0");
-  const [trempPrice, setTrempPrice] = useState("0");
-  const [bodenSupply, setBodenSupply] = useState(690325179.6146736);
-  const [trempSupply, setTrempSupply] = useState(99999112.73141688);
+  const [aPrice, setAPrice] = useState("0");
+  const [bPrice, setBPrice] = useState("0");
+  const [aSupply, setASupply] = useState(690325179.6146736);
+  const [bSupply, setBSupply] = useState(99999112.73141688);
   const [solBalance, setSolBalance] = useState(0);
-  const [trempBalance, setTrempBalance] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState(0);
-  const [bodenBalance, setBodenBalance] = useState(0);
+  const [aBalance, setABalance] = useState(0);
+  const [bBalance, setBBalance] = useState(0);
   const [mcapChartData, setMcapChartData] = useState<any[]>([]);
   const [priceChartData, setPriceChartData] = useState<any[]>([]);
   const [holdersChartData, setHoldersChartData] = useState<any[]>([]);
-  const [inputTokenBoden, setInputTokenBoden] = useState("sol");
-  const [inputTokenTremp, setInputTokenTremp] = useState("sol");
-  const [inputBodenAmount, setInputBodenAmount] = useState("0");
-  const [inputTrempAmount, setInputTrempAmount] = useState("0");
-  const [voteBodenLoading, setVoteBodenLoading] = useState(false);
-  const [voteTrempLoading, setVoteTrempLoading] = useState(false);
-  const [fetchedBodenResponseMeta, setFetchedBodenResponseMeta] =
-    useState<any>();
-  const [fetchedTrempResponseMeta, setFetchedTrempResponseMeta] =
-    useState<any>();
-  const { quoteResponseMeta: trempResponseMeta } = useJupiter({
+  const [aInputToken, setAInputToken] = useState("sol");
+  const [bInputToken, setBInputToken] = useState("sol");
+  const [aInputAmount, setAInputAmount] = useState("0");
+  const [bInputAmount, setBInputAmount] = useState("0");
+  const [voteALoading, setVoteALoading] = useState(false);
+  const [voteBLoading, setVoteBLoading] = useState(false);
+  const [fetchedAResponseMeta, setFetchedAResponseMeta] = useState<any>();
+  const [fetchedBResponseMeta, setFetchedBResponseMeta] = useState<any>();
+  const { quoteResponseMeta: bResponseMeta } = useJupiter({
     amount: JSBI.BigInt(1 * 10 ** 6),
-    inputMint: MINTS.tremp,
+    inputMint: MINTS[config.bDescriptor],
     outputMint: new PublicKey(MINTS["usdc"]),
     slippageBps: 1000,
     debounceTime: 1000,
   });
-  const { quoteResponseMeta: bodenResponseMeta } = useJupiter({
+  const { quoteResponseMeta: aResponseMeta } = useJupiter({
     amount: JSBI.BigInt(1 * 10 ** 6),
-    inputMint: MINTS.boden,
+    inputMint: MINTS[config.aDescriptor],
     outputMint: new PublicKey(MINTS["usdc"]),
     slippageBps: 1000,
     debounceTime: 1000,
   });
-  const outAmtParsedBoden = JSBI.BigInt(
-    new BigNumber(inputBodenAmount || "0")
-      .multipliedBy(new BigNumber(10).pow(DECIMALS[inputTokenBoden]))
+  const outAmtParsedA = JSBI.BigInt(
+    new BigNumber(aInputAmount || "0")
+      .multipliedBy(new BigNumber(10).pow(DECIMALS[aInputToken]))
       .toString()
       .split(".")[0]
   );
-  const outAmtParsedTremp = JSBI.BigInt(
-    new BigNumber(inputTrempAmount || "0")
-      .multipliedBy(new BigNumber(10).pow(DECIMALS[inputTokenTremp]))
+  const outAmtParsedB = JSBI.BigInt(
+    new BigNumber(bInputAmount || "0")
+      .multipliedBy(new BigNumber(10).pow(DECIMALS[bInputToken]))
       .toString()
       .split(".")[0]
   );
   const {
-    fetchSwapTransaction: fetchSwapTransactionTremp,
-    quoteResponseMeta: trempResponseMetaTx,
+    fetchSwapTransaction: fetchSwapTransactionA,
+    quoteResponseMeta: aResponseMetaTx,
   } = useJupiter({
-    amount: outAmtParsedTremp,
-    inputMint: MINTS[inputTokenTremp],
-    outputMint: MINTS["tremp"],
-    slippageBps: 1000,
-    debounceTime: 1000,
-  });
-  const {
-    fetchSwapTransaction: fetchSwapTransactionBoden,
-    quoteResponseMeta: bodenResponseMetaTx,
-  } = useJupiter({
-    amount: outAmtParsedBoden,
-    inputMint: MINTS[inputTokenBoden],
-    outputMint: MINTS["boden"],
+    amount: outAmtParsedA,
+    inputMint: MINTS[aInputToken],
+    outputMint: MINTS[config.aDescriptor],
     slippageBps: 10000,
     debounceTime: 1000,
   });
+  const {
+    fetchSwapTransaction: fetchSwapTransactionB,
+    quoteResponseMeta: bResponseMetaTx,
+  } = useJupiter({
+    amount: outAmtParsedB,
+    inputMint: MINTS[bInputToken],
+    outputMint: MINTS[config.bDescriptor],
+    slippageBps: 1000,
+    debounceTime: 1000,
+  });
 
   useEffect(() => {
-    if (bodenResponseMetaTx) {
-      setFetchedBodenResponseMeta(bodenResponseMetaTx);
+    if (aResponseMetaTx) {
+      setFetchedAResponseMeta(aResponseMetaTx);
     }
-  }, [bodenResponseMetaTx]);
+  }, [aResponseMetaTx]);
 
   useEffect(() => {
-    if (trempResponseMetaTx) {
-      setFetchedTrempResponseMeta(trempResponseMetaTx);
+    if (bResponseMetaTx) {
+      setFetchedBResponseMeta(bResponseMetaTx);
     }
-  }, [trempResponseMetaTx]);
+  }, [bResponseMetaTx]);
 
   useEffect(() => {
     if (!mounted) {
@@ -217,42 +208,43 @@ export default function Home() {
 
   useEffect(() => {
     Promise.allSettled([
-      connection.getTokenSupply(MINTS.tremp),
-      connection.getTokenSupply(MINTS.boden),
+      connection.getTokenSupply(MINTS[config.aDescriptor]),
+      connection.getTokenSupply(MINTS[config.bDescriptor]),
     ]).then((res) => {
-      const [tremp, boden] = res;
-      if (tremp.status === "fulfilled") {
-        if (tremp.value.value.uiAmount) {
-          setTrempSupply(tremp.value.value.uiAmount);
+      const [aRes, bRes] = res;
+
+      if (aRes.status === "fulfilled") {
+        if (aRes.value.value.uiAmount) {
+          setASupply(aRes.value.value.uiAmount);
         }
       }
-      if (boden.status === "fulfilled") {
-        if (boden.value.value.uiAmount) {
-          setBodenSupply(boden.value.value.uiAmount);
+      if (bRes.status === "fulfilled") {
+        if (bRes.value.value.uiAmount) {
+          setBSupply(bRes.value.value.uiAmount);
         }
       }
     });
   }, [connection]);
 
   useEffect(() => {
-    if (trempResponseMeta) {
+    if (bResponseMeta) {
       const bnOut = new BigNumber(
-        trempResponseMeta.quoteResponse.otherAmountThreshold.toString()
+        bResponseMeta.quoteResponse.otherAmountThreshold.toString()
       );
       const res = bnOut.dividedBy(10 ** 3).toString();
-      setTrempPrice(res);
+      setBPrice(res);
     }
-  }, [connection, trempResponseMeta]);
+  }, [connection, bResponseMeta]);
 
   useEffect(() => {
-    if (bodenResponseMeta) {
+    if (aResponseMeta) {
       const bnOut = new BigNumber(
-        bodenResponseMeta.quoteResponse.otherAmountThreshold.toString()
+        aResponseMeta.quoteResponse.otherAmountThreshold.toString()
       );
       const res = bnOut.dividedBy(10 ** 3).toString();
-      setBodenPrice(res);
+      setAPrice(res);
     }
-  }, [bodenResponseMeta, connection]);
+  }, [aResponseMeta, connection]);
 
   useEffect(() => {
     (async () => {
@@ -276,31 +268,31 @@ export default function Home() {
           }
           console.log(balance);
         }
-        const associatedTokenBoden = await getAssociatedTokenAccount(
+        const aAssociatedToken = await getAssociatedTokenAccount(
           connection,
-          MINTS.boden,
+          MINTS[config.aDescriptor],
           wallet.publicKey
         );
-        if (associatedTokenBoden) {
+        if (aAssociatedToken) {
           const balance = await connection.getTokenAccountBalance(
-            associatedTokenBoden?.address
+            aAssociatedToken?.address
           );
           if (balance.value.uiAmount) {
-            setBodenBalance(balance.value.uiAmount);
+            setABalance(balance.value.uiAmount);
           }
           console.log(balance);
         }
-        const associatedTokenTremp = await getAssociatedTokenAccount(
+        const bAssociatedToken = await getAssociatedTokenAccount(
           connection,
-          MINTS.tremp,
+          MINTS[config.bDescriptor],
           wallet.publicKey
         );
-        if (associatedTokenTremp) {
+        if (bAssociatedToken) {
           const balance = await connection.getTokenAccountBalance(
-            associatedTokenTremp?.address
+            bAssociatedToken?.address
           );
           if (balance.value.uiAmount) {
-            setTrempBalance(balance.value.uiAmount);
+            setBBalance(balance.value.uiAmount);
           }
           console.log(balance);
         }
@@ -309,75 +301,72 @@ export default function Home() {
   }, [connection, wallet.publicKey]);
 
   useEffect(() => {
-    if (trempSupply && trempPrice && bodenSupply && bodenPrice) {
+    if (bSupply && bPrice && aSupply && aPrice) {
       setMcapChartData([
         {
-          name: "Boden",
-          value: parseFloat(bodenPrice) * bodenSupply,
-          color: "#2563eb",
+          name: config.aDisplayNameShort,
+          value: parseFloat(aPrice) * aSupply,
+          color: config.aColor,
         },
         {
-          name: "Tremp",
-          value: parseFloat(trempPrice) * trempSupply,
-          color: "#DC2626",
+          name: config.bDisplayNameShort,
+          value: parseFloat(bPrice) * bSupply,
+          color: config.bColor,
         },
       ]);
-      console.log(bodenPrice, bodenSupply, trempPrice, trempSupply);
+      console.log(aPrice, aSupply, bPrice, bSupply);
       setPriceChartData([
         {
-          name: "Boden",
-          value: parseFloat(bodenPrice),
-          color: "#2563eb",
+          name: config.aDisplayNameShort,
+          value: parseFloat(aPrice),
+          color: config.aColor,
         },
         {
-          name: "Tremp",
-          value: parseFloat(trempPrice),
-          color: "#DC2626",
+          name: config.bDisplayNameShort,
+          value: parseFloat(bPrice),
+          color: config.bColor,
         },
       ]);
     }
-  }, [bodenPrice, bodenSupply, trempPrice, trempSupply]);
+  }, [aPrice, aSupply, bPrice, bSupply]);
 
   const currentMax = useMemo(() => {
-    if (inputTokenBoden === "sol") {
+    if (aInputToken === "sol") {
       return `${transformedTvl(solBalance)}`;
     }
-    if (inputTokenBoden === "tremp") {
-      return `${transformedTvl(trempBalance)}`;
+    if (aInputToken === config.bDescriptor) {
+      return `${transformedTvl(bBalance)}`;
     }
-    if (inputTokenBoden === "usdc") {
+    if (aInputToken === "usdc") {
       return `${transformedTvl(usdcBalance)}`;
     }
-  }, [inputTokenBoden, solBalance, trempBalance, usdcBalance]);
+  }, [aInputToken, solBalance, bBalance, usdcBalance]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_HELIUS_PROXY!}/get-holders`).then(
-      (data) => {
-        data.json().then((res) => {
-          console.log(res);
-          setHoldersChartData([
-            {
-              name: "Boden",
-              value: res.holders.boden,
-              color: "#2563eb",
-            },
-            {
-              name: "Tremp",
-              value: res.holders.tremp,
-              color: "#DC2626",
-            },
-          ]);
-        });
-      }
-    );
+    fetch(`${process.env.NEXT_PUBLIC_HELIUS_PROXY!}/get-holders`)
+      .then((data) => data.json())
+      .then((data) => {
+        setHoldersChartData([
+          {
+            name: config.aDisplayNameShort,
+            value: data.holders[config.aDescriptor],
+            color: config.aColor,
+          },
+          {
+            name: config.bDisplayNameShort,
+            value: data.holders[config.bDescriptor],
+            color: config.bColor,
+          },
+        ]);
+      });
   }, []);
 
   useEffect(() => {
     if (!wallet.connected) {
       setSolBalance(0);
       setUsdcBalance(0);
-      setBodenBalance(0);
-      setTrempBalance(0);
+      setABalance(0);
+      setBBalance(0);
     }
   }, [wallet.connected]);
 
@@ -403,22 +392,22 @@ export default function Home() {
       (res) => res.json()
     );
   };
-  const commitTransactionBoden = useCallback(async () => {
+  const aCommitTransaction = useCallback(async () => {
     try {
-      setVoteBodenLoading(true);
+      setVoteALoading(true);
       fetchQuote({
-        inputMint: MINTS[inputTokenBoden].toString(),
-        outputMint: MINTS["boden"].toString(),
-        amount: outAmtParsedBoden.toString(),
+        inputMint: MINTS[aInputToken].toString(),
+        outputMint: MINTS[config.aDescriptor].toString(),
+        amount: outAmtParsedA.toString(),
         slippageBps: "10000",
       }).then(async (updatedMeta) => {
         try {
           if (updatedMeta.error) {
             alert("There was an error fetching the quote");
-            setVoteBodenLoading(false);
+            setVoteALoading(false);
             return;
           }
-          if (updatedMeta && wallet.publicKey && fetchedBodenResponseMeta) {
+          if (updatedMeta && wallet.publicKey && fetchedAResponseMeta) {
             updatedMeta.inAmount = JSBI.BigInt(updatedMeta.inAmount);
             updatedMeta.outAmount = JSBI.BigInt(updatedMeta.outAmount);
             updatedMeta.inputMint = new PublicKey(updatedMeta.inputMint);
@@ -426,7 +415,7 @@ export default function Home() {
             updatedMeta.otherAmountThreshold = JSBI.BigInt(
               updatedMeta.otherAmountThreshold
             );
-            fetchedBodenResponseMeta.quoteResponse = updatedMeta;
+            fetchedAResponseMeta.quoteResponse = updatedMeta;
             // const [feeAccount] = await PublicKey.findProgramAddressSync(
             //   [
             //     Buffer.from("referral_ata"),
@@ -457,8 +446,8 @@ export default function Home() {
             // const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
             // const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
             // wallet.sendTransaction(transaction, connection);
-            const { swapTransaction } = (await fetchSwapTransactionBoden({
-              quoteResponseMeta: fetchedBodenResponseMeta,
+            const { swapTransaction } = (await fetchSwapTransactionA({
+              quoteResponseMeta: fetchedAResponseMeta,
               userPublicKey: wallet.publicKey,
               prioritizationFeeLamports: 0.001 * LAMPORTS_PER_SOL,
             })) as {
@@ -470,36 +459,36 @@ export default function Home() {
               return;
             }
             await wallet.signTransaction(swapTransaction);
-            setVoteBodenLoading(false);
+            setVoteALoading(false);
           }
         } catch (e) {
           console.log(e);
-          setVoteBodenLoading(false);
+          setVoteALoading(false);
         }
       });
     } catch (e) {
       console.log(e);
-      setVoteBodenLoading(false);
+      setVoteALoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bodenResponseMetaTx, inputTokenBoden, outAmtParsedBoden, wallet]);
+  }, [aResponseMetaTx, aInputToken, outAmtParsedA, wallet]);
 
-  const commitTransactionTremp = useCallback(async () => {
+  const bCommitTransaction = useCallback(async () => {
     try {
-      setVoteTrempLoading(true);
+      setVoteBLoading(true);
       fetchQuote({
-        inputMint: MINTS[inputTokenTremp].toString(),
-        outputMint: MINTS["tremp"].toString(),
-        amount: outAmtParsedTremp.toString(),
+        inputMint: MINTS[bInputToken].toString(),
+        outputMint: MINTS[config.bDescriptor].toString(),
+        amount: outAmtParsedB.toString(),
         slippageBps: "10000",
       }).then(async (updatedMeta) => {
         try {
           if (updatedMeta.error) {
             alert("There was an error fetching the quote");
-            setVoteTrempLoading(false);
+            setVoteBLoading(false);
             return;
           }
-          if (updatedMeta && wallet.publicKey && trempResponseMetaTx) {
+          if (updatedMeta && wallet.publicKey && bResponseMetaTx) {
             updatedMeta.inAmount = JSBI.BigInt(updatedMeta.inAmount);
             updatedMeta.outAmount = JSBI.BigInt(updatedMeta.outAmount);
             updatedMeta.inputMint = new PublicKey(updatedMeta.inputMint);
@@ -507,9 +496,9 @@ export default function Home() {
             updatedMeta.otherAmountThreshold = JSBI.BigInt(
               updatedMeta.otherAmountThreshold
             );
-            trempResponseMetaTx.quoteResponse = updatedMeta;
-            const { swapTransaction } = (await fetchSwapTransactionTremp({
-              quoteResponseMeta: trempResponseMetaTx,
+            bResponseMetaTx.quoteResponse = updatedMeta;
+            const { swapTransaction } = (await fetchSwapTransactionB({
+              quoteResponseMeta: bResponseMetaTx,
               userPublicKey: wallet.publicKey,
               prioritizationFeeLamports: 0.001 * LAMPORTS_PER_SOL,
             })) as {
@@ -521,95 +510,93 @@ export default function Home() {
               return;
             }
             await wallet.signTransaction(swapTransaction);
-            setVoteTrempLoading(false);
+            setVoteBLoading(false);
           }
         } catch (e) {
           console.log(e);
-          setVoteTrempLoading(false);
+          setVoteBLoading(false);
         }
       });
     } catch (e) {
       console.log(e);
-      setVoteTrempLoading(false);
+      setVoteBLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputTokenTremp, outAmtParsedTremp, trempResponseMetaTx, wallet]);
+  }, [bInputToken, outAmtParsedB, bResponseMetaTx, wallet]);
 
-  const trempButtonDisabled = useMemo(() => {
+  const bButtonDisabled = useMemo(() => {
     return (
-      (!fetchedTrempResponseMeta &&
-        inputTrempAmount !== "0" &&
-        inputTrempAmount !== "") ||
-      inputTrempAmount === "0" ||
-      inputTrempAmount === "" ||
-      voteTrempLoading
+      (!fetchedBResponseMeta && bInputAmount !== "0" && bInputAmount !== "") ||
+      bInputAmount === "0" ||
+      bInputAmount === "" ||
+      voteBLoading
     );
-  }, [fetchedTrempResponseMeta, inputTrempAmount, voteTrempLoading]);
+  }, [fetchedBResponseMeta, bInputAmount, voteBLoading]);
 
-  const handleDispatchTrempAmount = useCallback(
+  const handleDispatchBAmount = useCallback(
     (value: string) => {
       if (value === "") {
-        setInputTrempAmount("");
+        setBInputAmount("");
         return;
       }
       if (isZeroDecimal(value)) {
-        if (exceedsDecimals(value, DECIMALS[inputTokenTremp])) {
-          setInputTrempAmount(trimDecimals(value, DECIMALS[inputTokenTremp]));
+        if (exceedsDecimals(value, DECIMALS[bInputToken])) {
+          setBInputAmount(trimDecimals(value, DECIMALS[bInputToken]));
           return;
         }
-        setInputTrempAmount(value);
+        setBInputAmount(value);
         return;
       }
       const max =
-        inputTokenTremp === "sol"
+        bInputToken === "sol"
           ? solBalance
-          : inputTokenTremp === "boden"
-          ? bodenBalance
+          : bInputToken === config.aDescriptor
+          ? aBalance
           : usdcBalance;
-      const jsbiMax = new BigNumber(
-        max * 10 ** DECIMALS[inputTokenTremp]
-      ).toFixed(0);
+      const jsbiMax = new BigNumber(max * 10 ** DECIMALS[bInputToken]).toFixed(
+        0
+      );
       const clamped = clampValue({
         value,
         max: JSBI.BigInt(jsbiMax),
-        decimals: DECIMALS[inputTokenTremp],
+        decimals: DECIMALS[bInputToken],
       });
-      setInputTrempAmount(clamped);
+      setBInputAmount(clamped);
     },
-    [bodenBalance, inputTokenTremp, solBalance, usdcBalance]
+    [aBalance, bInputToken, solBalance, usdcBalance]
   );
 
-  const handleDispatchBodenAmount = useCallback(
+  const handleDispatchAAmount = useCallback(
     (value: string) => {
       if (value === "") {
-        setInputBodenAmount("");
+        setAInputAmount("");
         return;
       }
       if (isZeroDecimal(value)) {
-        if (exceedsDecimals(value, DECIMALS[inputTokenBoden])) {
-          setInputBodenAmount(trimDecimals(value, DECIMALS[inputTokenBoden]));
+        if (exceedsDecimals(value, DECIMALS[aInputToken])) {
+          setAInputAmount(trimDecimals(value, DECIMALS[aInputToken]));
           return;
         }
-        setInputBodenAmount(value);
+        setAInputAmount(value);
         return;
       }
       const max =
-        inputTokenBoden === "sol"
+        aInputToken === "sol"
           ? solBalance
-          : inputTokenBoden === "tremp"
-          ? trempBalance
+          : aInputToken === config.bDescriptor
+          ? bBalance
           : usdcBalance;
-      const jsbiMax = new BigNumber(
-        max * 10 ** DECIMALS[inputTokenBoden]
-      ).toFixed(0);
+      const jsbiMax = new BigNumber(max * 10 ** DECIMALS[aInputToken]).toFixed(
+        0
+      );
       const clamped = clampValue({
         value,
         max: JSBI.BigInt(jsbiMax),
-        decimals: DECIMALS[inputTokenBoden],
+        decimals: DECIMALS[aInputToken],
       });
-      setInputBodenAmount(clamped);
+      setAInputAmount(clamped);
     },
-    [inputTokenBoden, solBalance, trempBalance, usdcBalance]
+    [aInputToken, solBalance, bBalance, usdcBalance]
   );
 
   return (
@@ -619,8 +606,13 @@ export default function Home() {
           <div className="w-full max-w-7xl mx-auto flex flex-col md:grid grid-cols-3 ">
             <div></div>
             <h1 className="text-3xl">
-              <span className={comingSoon.className}>Boden</span> vs{" "}
-              <span className={adigiana.className}>Tremp</span>
+              <span className={comingSoon.className}>
+                {config.aDisplayNameShort}
+              </span>{" "}
+              vs{" "}
+              <span className={adigiana.className}>
+                {config.bDisplayNameShort}
+              </span>
             </h1>
             <div className="flex flex-row">
               <div className="mx-auto md:ml-auto md:mr-0 md:my-0">
@@ -644,13 +636,13 @@ export default function Home() {
           style={{ gridTemplateColumns: "1fr 50px 1fr" }}
         >
           <div className={`flex flex-col gap-4 ${comingSoon.className}`}>
-            <h2 className="text-2xl">Jeo Boden</h2>
+            <h2 className="text-2xl">{config.aDisplayNameLong}</h2>
             <div className="flex flex-col items-center justify-center">
               <div className="rounded-full overflow-hidden bg-blue-600 h-[200px] w-[200px]  ring-4 ring-white">
                 <Image
                   className="-scale-y-100 -rotate-180"
-                  alt="Boden"
-                  src={"/boden.png"}
+                  alt={config.aDisplayNameShort}
+                  src={`/${config.aDescriptor}.png`}
                   width={200}
                   height={200}
                 />
@@ -658,20 +650,19 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 max-w-[300px] mx-auto">
               <div className="text-left">Price</div>
-              <div className="text-right">${bodenPrice} / BODEN </div>
+              <div className="text-right">
+                ${aPrice} / {config.aTicker}{" "}
+              </div>
               <div className="text-left">MCAP</div>
               <div className="text-right">
-                $
-                {transformedTvl(
-                  parseInt(`${bodenSupply * parseFloat(bodenPrice)}`)
-                )}
+                ${transformedTvl(parseInt(`${aSupply * parseFloat(aPrice)}`))}
               </div>
               <div className="text-left">Balance</div>
               <div className="text-right">
-                {bodenBalance.toLocaleString("en-US", {
+                {aBalance.toLocaleString("en-US", {
                   maximumFractionDigits: 2,
                 })}{" "}
-                BODEN
+                {config.aTicker}
               </div>
             </div>
             <div className="flex flex-col justify-center items-center gap-4">
@@ -679,19 +670,15 @@ export default function Home() {
                 <div className="flex flex-row gap-4 w-full mb-2">
                   <button
                     onClick={() => {
-                      setFetchedBodenResponseMeta(undefined);
-                      if (inputTokenBoden === "sol") {
-                        return setInputBodenAmount((solBalance / 2).toString());
+                      setFetchedAResponseMeta(undefined);
+                      if (aInputToken === "sol") {
+                        return setAInputAmount((solBalance / 2).toString());
                       }
-                      if (inputTokenBoden === "tremp") {
-                        return setInputBodenAmount(
-                          (trempBalance / 2).toString()
-                        );
+                      if (aInputToken === config.bDescriptor) {
+                        return setAInputAmount((bBalance / 2).toString());
                       }
-                      if (inputTokenBoden === "usdc") {
-                        return setInputBodenAmount(
-                          (usdcBalance / 2).toString()
-                        );
+                      if (aInputToken === "usdc") {
+                        return setAInputAmount((usdcBalance / 2).toString());
                       }
                     }}
                     className="ml-auto border border-zinc-400 px-2 rounded-lg text-xs"
@@ -700,15 +687,15 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => {
-                      setFetchedBodenResponseMeta(undefined);
-                      if (inputTokenBoden === "sol") {
-                        return setInputBodenAmount(solBalance.toString());
+                      setFetchedAResponseMeta(undefined);
+                      if (aInputToken === "sol") {
+                        return setAInputAmount(solBalance.toString());
                       }
-                      if (inputTokenBoden === "tremp") {
-                        return setInputBodenAmount(trempBalance.toString());
+                      if (aInputToken === config.bDescriptor) {
+                        return setAInputAmount(bBalance.toString());
                       }
-                      if (inputTokenBoden === "usdc") {
-                        return setInputBodenAmount(usdcBalance.toString());
+                      if (aInputToken === "usdc") {
+                        return setAInputAmount(usdcBalance.toString());
                       }
                     }}
                     className="border border-zinc-400 px-2 rounded-lg text-xs"
@@ -718,20 +705,20 @@ export default function Home() {
                 </div>
                 <div className="flex flex-row bg-white text-black px-3 py-2 rounded justify-center items-center">
                   <select
-                    value={inputTokenBoden}
-                    onChange={(e) => setInputTokenBoden(e.target.value)}
+                    value={aInputToken}
+                    onChange={(e) => setAInputToken(e.target.value)}
                   >
                     <option value={"sol"}>SOL</option>
                     <option value={"usdc"}>USDC</option>
-                    <option value={"tremp"}>TREMP</option>
+                    <option value={config.bDescriptor}>{config.bTicker}</option>
                   </select>
                   <input
                     className="w-[150px] text-right"
                     placeholder={currentMax}
-                    value={inputBodenAmount}
+                    value={aInputAmount}
                     onChange={(e) => {
-                      handleDispatchBodenAmount(e.target.value);
-                      setFetchedBodenResponseMeta(undefined);
+                      handleDispatchAAmount(e.target.value);
+                      setFetchedAResponseMeta(undefined);
                     }}
                     type="number"
                   />{" "}
@@ -740,37 +727,37 @@ export default function Home() {
                   <div className="w-full flex flex-row justify-between my-2 text-zinc-400 text-xs">
                     <span>available:</span>
                     <span>
-                      {inputTokenBoden === "sol" &&
+                      {aInputToken === "sol" &&
                         `${transformedTvl(solBalance)} SOL`}
-                      {inputTokenBoden === "tremp" &&
-                        `${transformedTvl(trempBalance)} TREMP`}
-                      {inputTokenBoden === "usdc" &&
+                      {aInputToken === config.bDescriptor &&
+                        `${transformedTvl(bBalance)} ${config.bTicker}`}
+                      {aInputToken === "usdc" &&
                         `${transformedTvl(usdcBalance)} USDC`}
                     </span>
                   </div>
                 }
               </div>
               <button
-                onClick={() => commitTransactionBoden()}
+                onClick={() => aCommitTransaction()}
                 disabled={
-                  voteBodenLoading ||
-                  (!fetchedBodenResponseMeta && inputBodenAmount !== "0") ||
-                  inputBodenAmount === "0"
+                  voteALoading ||
+                  (!fetchedAResponseMeta && aInputAmount !== "0") ||
+                  aInputAmount === "0"
                 }
                 className={
                   "flex px-3 py-2 bg-blue-600 border border-blue-800 text-white rounded " +
-                  (voteBodenLoading ||
-                  (!fetchedBodenResponseMeta && inputBodenAmount !== "0") ||
-                  inputBodenAmount === "0"
+                  (voteALoading ||
+                  (!fetchedAResponseMeta && aInputAmount !== "0") ||
+                  aInputAmount === "0"
                     ? "opacity-50"
                     : "")
                 }
               >
-                {!fetchedBodenResponseMeta && inputBodenAmount !== "0"
+                {!fetchedAResponseMeta && aInputAmount !== "0"
                   ? "Fetching quote..."
-                  : voteBodenLoading
+                  : voteALoading
                   ? "Voting..."
-                  : "Vote Boden"}
+                  : `Vote ${config.aDisplayNameShort}`}
               </button>
             </div>
           </div>
@@ -778,12 +765,12 @@ export default function Home() {
             vs.
           </div>
           <div className={`flex flex-col gap-4 ${adigiana.className}`}>
-            <h2 className="text-2xl">Doland Tremp</h2>
+            <h2 className="text-2xl">{config.bDisplayNameLong}</h2>
             <div className="flex flex-col items-center justify-center">
               <div className="rounded-full overflow-hidden bg-red-600 h-[200px] w-[200px] ring-4 ring-white">
                 <Image
-                  alt="Boden"
-                  src={"/tremp.png"}
+                  alt={config.bDisplayNameShort}
+                  src={`/${config.bDescriptor}.png`}
                   width={200}
                   height={200}
                 />
@@ -791,20 +778,19 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 max-w-[300px] mx-auto">
               <div className="text-left">Price</div>
-              <div className="text-right">${trempPrice} / TREMP </div>
+              <div className="text-right">
+                ${bPrice} / {config.bTicker}{" "}
+              </div>
               <div className="text-left">MCAP</div>
               <div className="text-right">
-                $
-                {transformedTvl(
-                  parseInt(`${trempSupply * parseFloat(trempPrice)}`)
-                )}
+                ${transformedTvl(parseInt(`${bSupply * parseFloat(bPrice)}`))}
               </div>
               <div className="text-left">Balance</div>
               <div className="text-right">
-                {trempBalance.toLocaleString("en-US", {
+                {bBalance.toLocaleString("en-US", {
                   maximumFractionDigits: 2,
                 })}{" "}
-                TREMP
+                {config.bTicker}
               </div>
             </div>
             <div className="flex flex-col justify-center items-center gap-4">
@@ -812,19 +798,15 @@ export default function Home() {
                 <div className="flex flex-row gap-2 w-full mb-2">
                   <button
                     onClick={() => {
-                      setFetchedTrempResponseMeta(undefined);
-                      if (inputTokenTremp === "sol") {
-                        return setInputTrempAmount((solBalance / 2).toString());
+                      setFetchedBResponseMeta(undefined);
+                      if (bInputToken === "sol") {
+                        return setBInputAmount((solBalance / 2).toString());
                       }
-                      if (inputTokenTremp === "boden") {
-                        return setInputTrempAmount(
-                          (bodenBalance / 2).toString()
-                        );
+                      if (bInputToken === config.aDescriptor) {
+                        return setBInputAmount((aBalance / 2).toString());
                       }
-                      if (inputTokenTremp === "usdc") {
-                        return setInputTrempAmount(
-                          (usdcBalance / 2).toString()
-                        );
+                      if (bInputToken === "usdc") {
+                        return setBInputAmount((usdcBalance / 2).toString());
                       }
                     }}
                     className="ml-auto border border-zinc-400 px-2 rounded-lg text-xs"
@@ -833,16 +815,16 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => {
-                      setFetchedTrempResponseMeta(undefined);
+                      setFetchedBResponseMeta(undefined);
 
-                      if (inputTokenTremp === "sol") {
-                        return setInputTrempAmount(solBalance.toString());
+                      if (bInputToken === "sol") {
+                        return setBInputAmount(solBalance.toString());
                       }
-                      if (inputTokenTremp === "boden") {
-                        return setInputTrempAmount(bodenBalance.toString());
+                      if (bInputToken === config.aDescriptor) {
+                        return setBInputAmount(aBalance.toString());
                       }
-                      if (inputTokenTremp === "usdc") {
-                        return setInputTrempAmount(usdcBalance.toString());
+                      if (bInputToken === "usdc") {
+                        return setBInputAmount(usdcBalance.toString());
                       }
                     }}
                     className="border border-zinc-400 px-2 rounded-lg text-xs"
@@ -852,20 +834,20 @@ export default function Home() {
                 </div>
                 <div className="flex flex-row bg-white text-black px-3 py-2 rounded justify-center items-center">
                   <select
-                    value={inputTokenTremp}
-                    onChange={(e) => setInputTokenTremp(e.target.value)}
+                    value={bInputToken}
+                    onChange={(e) => setBInputToken(e.target.value)}
                   >
                     <option value={"sol"}>SOL</option>
                     <option value={"usdc"}>USDC</option>
-                    <option value={"boden"}>BODEN</option>
+                    <option value={config.aDescriptor}>{config.aTicker}</option>
                   </select>
                   <input
                     className="w-[150px] text-right"
                     placeholder={currentMax}
-                    value={inputTrempAmount}
+                    value={bInputAmount}
                     onChange={(e) => {
-                      handleDispatchTrempAmount(e.target.value);
-                      setFetchedTrempResponseMeta(undefined);
+                      handleDispatchBAmount(e.target.value);
+                      setFetchedBResponseMeta(undefined);
                     }}
                     type="number"
                   />{" "}
@@ -874,31 +856,31 @@ export default function Home() {
                   <div className="w-full flex flex-row justify-between my-2 text-zinc-400 text-xs">
                     <span>available:</span>
                     <span>
-                      {inputTokenTremp === "sol" &&
+                      {bInputToken === "sol" &&
                         `${transformedTvl(solBalance)} SOL`}
-                      {inputTokenTremp === "boden" &&
-                        `${transformedTvl(bodenBalance)} BODEN`}
-                      {inputTokenTremp === "usdc" &&
+                      {bInputToken === config.aDescriptor &&
+                        `${transformedTvl(aBalance)} ${config.aTicker}`}
+                      {bInputToken === "usdc" &&
                         `${transformedTvl(usdcBalance)} USDC`}
                     </span>
                   </div>
                 }
               </div>
               <button
-                onClick={() => commitTransactionTremp()}
-                disabled={trempButtonDisabled}
+                onClick={() => bCommitTransaction()}
+                disabled={bButtonDisabled}
                 className={
                   "flex px-3 py-2 bg-red-600 border border-red-800 text-white rounded " +
-                  (trempButtonDisabled ? "opacity-50" : "")
+                  (bButtonDisabled ? "opacity-50" : "")
                 }
               >
-                {!fetchedTrempResponseMeta &&
-                inputTrempAmount !== "0" &&
-                inputTrempAmount !== ""
+                {!fetchedBResponseMeta &&
+                bInputAmount !== "0" &&
+                bInputAmount !== ""
                   ? "Fetching quote..."
-                  : voteTrempLoading
+                  : voteBLoading
                   ? "Voting..."
-                  : "Vote Tremp"}
+                  : `Vote ${config.bDisplayNameShort}`}
               </button>
             </div>
           </div>
@@ -996,16 +978,16 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors hover:text-blue-400"
-              href="https://twitter.com/thereal0xalice"
+              href={config.twitter}
             >
-              0xAlice
+              {config.author}
             </a>
           </span>
           <a
             target="_blank"
             rel="noopener noreferrer"
             className="transition-colors hover:text-blue-400"
-            href="https://github.com/21e8/boden-tremp-2024"
+            href={config.githubRepo}
           >
             <i>
               <svg
