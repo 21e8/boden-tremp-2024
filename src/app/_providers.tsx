@@ -23,10 +23,10 @@ const JupiterWrapper = ({ children }: { children: React.ReactNode }) => {
     <JupiterProvider
       connection={connection}
       userPublicKey={publicKey || Keypair.generate().publicKey}
-      platformFeeAndAccounts={{
-        referralAccount: new PublicKey(process.env.NEXT_PUBLIC_FEE_ACCOUNT!),
-        feeBps: 100,
-      }}
+      // platformFeeAndAccounts={{
+      //   referralAccount: new PublicKey(process.env.NEXT_PUBLIC_FEE_ACCOUNT!),
+      //   feeBps: 100,
+      // }}
     >
       {children}
     </JupiterProvider>

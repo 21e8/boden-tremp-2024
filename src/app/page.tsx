@@ -397,6 +397,7 @@ export default function Home() {
     params.append("outputMint", outputMint);
     params.append("amount", amount);
     params.append("slippageBps", slippageBps);
+    // params.append("platformFeeBps", "100");
     params.append("experimentalDexes", "Jupiter LO");
     return fetch("https://quote-api.jup.ag/v6/quote?" + params.toString()).then(
       (res) => res.json()
@@ -426,6 +427,36 @@ export default function Home() {
               updatedMeta.otherAmountThreshold
             );
             fetchedBodenResponseMeta.quoteResponse = updatedMeta;
+            // const [feeAccount] = await PublicKey.findProgramAddressSync(
+            //   [
+            //     Buffer.from("referral_ata"),
+            //     new PublicKey(process.env.NEXT_PUBLIC_FEE_ACCOUNT!).toBuffer(), // your referral account public key
+            //     new PublicKey(updatedMeta.inputMint).toBuffer(), // the token mint, output mint for ExactIn, input mint for ExactOut.
+            //   ],
+            //   new PublicKey("REFER4ZgmyYx9c6He5XfaTMiGfdLwRnkV4RPp9t9iF3") // the Referral Program
+            // );
+            // console.log(updatedMeta)
+            // const { swapTransaction } = await (
+            //   await fetch("https://quote-api.jup.ag/v6/swap", {
+            //     method: "POST",
+            //     headers: {
+            //       "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({
+            //       // quoteResponse from /quote api
+            //       quoteResponse: updatedMeta,
+            //       // user public key to be used for the swap
+            //       userPublicKey: wallet.publicKey.toString(),
+            //       // auto wrap and unwrap SOL. default is true
+            //       wrapAndUnwrapSol: true,
+            //       feeAccount,
+            //       prioritizationFeeLamports: 0.001 * LAMPORTS_PER_SOL
+            //     }),
+            //   })
+            // ).json();
+            // const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
+            // const transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+            // wallet.sendTransaction(transaction, connection);
             const { swapTransaction } = (await fetchSwapTransactionBoden({
               quoteResponseMeta: fetchedBodenResponseMeta,
               userPublicKey: wallet.publicKey,
@@ -584,18 +615,32 @@ export default function Home() {
   return (
     <>
       <div className="w-full max-w-7xl mx-auto p-8 flex flex-col">
-        <div className="text-center md:grid grid-cols-3 items-center mb-8 bg-red-600 p-4 rounded-2xl left-6 right-6 fixed z-10">
-          <div></div>
-          <h1 className="text-3xl">Boden vs Tremp 2024</h1>
-          <div className="flex flex-row">
-            <div className="mx-auto md:ml-auto md:mr-0 my-4 md:my-0">
-              {" "}
-              {mounted && <WalletMultiButton />}
+        <div className="text-center items-center mb-8 bg-red-600 p-4 rounded-2xl left-0 right-0 top-0 w-full fixed z-10">
+          <div className="w-full max-w-7xl mx-auto flex flex-col md:grid grid-cols-3 ">
+            <div></div>
+            <h1 className="text-3xl">
+              <span className={comingSoon.className}>Boden</span> vs{" "}
+              <span className={adigiana.className}>Tremp</span>
+            </h1>
+            <div className="flex flex-row">
+              <div className="mx-auto md:ml-auto md:mr-0 md:my-0">
+                {" "}
+                {mounted && (
+                  <div className="hidden md:block">
+                    <WalletMultiButton />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        {mounted && (
+          <div className=" md:hidden mt-16 w-full flex items-center justify-center">
+            <WalletMultiButton />
+          </div>
+        )}
         <div
-          className="flex flex-col md:grid grid-cols-3 text-center gap-8 mb-8 bg-[rgb(1,73,171)] p-4 rounded-2xl mt-24"
+          className="flex flex-col md:grid grid-cols-3 text-center gap-8 mb-8 ring ring-4 ring-[rgb(1,73,171)] p-4 rounded-2xl mt-8 md:mt-24"
           style={{ gridTemplateColumns: "1fr 50px 1fr" }}
         >
           <div className={`flex flex-col gap-4 ${comingSoon.className}`}>
