@@ -218,14 +218,18 @@ export default function Home() {
   }, [connection]);
 
   useEffect(() => {
-    const itv = setInterval(async () => {
+    const fetchPrices = async () => {
       const price = await coingecko.simplePrice({
         vs_currencies: "usd",
         ids: [config.aCoingeckoId, config.bCoingeckoId].join(","),
       });
       setAPrice(`${price[config.aCoingeckoId].usd.toFixed(3)}`);
       setBPrice(`${price[config.bCoingeckoId].usd.toFixed(3)}`);
+    };
+    const itv = setInterval(async () => {
+      fetchPrices();
     }, 1000 * 60);
+    fetchPrices();
     return () => clearInterval(itv);
   }, []);
 
