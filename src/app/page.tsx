@@ -1,17 +1,23 @@
 "use client";
-import { useJupiter } from "@jup-ag/react-hook";
-import JSBI from "jsbi";
+import { QuoteResponseMeta, useJupiter } from "@jup-ag/react-hook";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { BigNumber } from "bignumber.js";
+import { encode } from "bs58";
+import { CoinGeckoClient } from "coingecko-api-v3";
+import JSBI from "jsbi";
+import { Coming_Soon } from "next/font/google";
+import localFont from "next/font/local";
 import Image from "next/image";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import "@solana/wallet-adapter-react-ui/styles.css";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Cell, Pie, PieChart } from "recharts";
+import { config } from "./_config";
 import {
   clampValue,
   exceedsDecimals,
@@ -20,12 +26,6 @@ import {
   transformedTvl,
   trimDecimals,
 } from "./_util";
-import { Cell, Pie, PieChart } from "recharts";
-import { BigNumber } from "bignumber.js";
-import { Coming_Soon } from "next/font/google";
-import localFont from "next/font/local";
-import { config } from "./_config";
-import { CoinGeckoClient } from "coingecko-api-v3";
 const coingecko = new CoinGeckoClient({
   timeout: 10000,
   autoRetry: true,
@@ -60,6 +60,7 @@ const renderMcapLabel = (t: {
     </text>
   );
 };
+
 const renderPriceLabel = (t: {
   cx: number;
   cy: number;
@@ -144,8 +145,12 @@ export default function Home() {
   const [bInputAmount, setBInputAmount] = useState("0");
   const [voteALoading, setVoteALoading] = useState(false);
   const [voteBLoading, setVoteBLoading] = useState(false);
-  const [fetchedAResponseMeta, setFetchedAResponseMeta] = useState<any>();
-  const [fetchedBResponseMeta, setFetchedBResponseMeta] = useState<any>();
+  const [fetchedAResponseMeta, setFetchedAResponseMeta] = useState<
+    QuoteResponseMeta | undefined
+  >(undefined);
+  const [fetchedBResponseMeta, setFetchedBResponseMeta] = useState<
+    QuoteResponseMeta | undefined
+  >(undefined);
   const outAmtParsedA = JSBI.BigInt(
     new BigNumber(aInputAmount || "0")
       .multipliedBy(new BigNumber(10).pow(DECIMALS[aInputToken]))
@@ -253,7 +258,6 @@ export default function Home() {
           if (balance.value.uiAmount) {
             setUsdcBalance(balance.value.uiAmount);
           }
-          console.log(balance);
         }
         const aAssociatedToken = await getAssociatedTokenAccount(
           connection,
@@ -442,7 +446,20 @@ export default function Home() {
             if (!wallet.signTransaction) {
               return;
             }
-            await wallet.signTransaction(swapTransaction);
+            const tx = await wallet.signTransaction(swapTransaction);
+            await connection.sendRawTransaction(tx.serialize());
+            const [sig] = tx.signatures;
+            const { blockhash, lastValidBlockHeight } =
+              await connection.getLatestBlockhash();
+            // @TODO: display a success message
+            await connection.confirmTransaction(
+              {
+                signature: encode(sig as Uint8Array),
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight,
+              },
+              "processed"
+            );
             setVoteALoading(false);
           }
         } catch (e) {
@@ -493,7 +510,20 @@ export default function Home() {
             if (!wallet.signTransaction) {
               return;
             }
-            await wallet.signTransaction(swapTransaction);
+            const tx = await wallet.signTransaction(swapTransaction);
+            await connection.sendRawTransaction(tx.serialize());
+            const [sig] = tx.signatures;
+            const { blockhash, lastValidBlockHeight } =
+              await connection.getLatestBlockhash();
+            // @TODO: display a success message
+            await connection.confirmTransaction(
+              {
+                signature: encode(sig as Uint8Array),
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight,
+              },
+              "processed"
+            );
             setVoteBLoading(false);
           }
         } catch (e) {
@@ -583,6 +613,64 @@ export default function Home() {
     [aInputToken, solBalance, bBalance, usdcBalance]
   );
 
+  const setToMax = useCallback(
+    (side: "a" | "b") => {
+      if (side === "a") {
+        setFetchedAResponseMeta(undefined);
+        if (aInputToken === "sol") {
+          return setAInputAmount(solBalance.toString());
+        }
+        if (aInputToken === config.bDescriptor) {
+          return setAInputAmount(bBalance.toString());
+        }
+        if (aInputToken === "usdc") {
+          return setAInputAmount(usdcBalance.toString());
+        }
+      } else {
+        setFetchedBResponseMeta(undefined);
+        if (bInputToken === "sol") {
+          return setBInputAmount(solBalance.toString());
+        }
+        if (bInputToken === config.aDescriptor) {
+          return setBInputAmount(aBalance.toString());
+        }
+        if (bInputToken === "usdc") {
+          return setBInputAmount(usdcBalance.toString());
+        }
+      }
+    },
+    [aBalance, aInputToken, bBalance, bInputToken, solBalance, usdcBalance]
+  );
+
+  const setToHalf = useCallback(
+    (side: "a" | "b") => {
+      if (side === "a") {
+        setFetchedAResponseMeta(undefined);
+        if (aInputToken === "sol") {
+          return setAInputAmount((solBalance / 2).toString());
+        }
+        if (aInputToken === config.bDescriptor) {
+          return setAInputAmount((bBalance / 2).toString());
+        }
+        if (aInputToken === "usdc") {
+          return setAInputAmount((usdcBalance / 2).toString());
+        }
+      } else {
+        setFetchedBResponseMeta(undefined);
+        if (bInputToken === "sol") {
+          return setBInputAmount((solBalance / 2).toString());
+        }
+        if (bInputToken === config.aDescriptor) {
+          return setBInputAmount((aBalance / 2).toString());
+        }
+        if (bInputToken === "usdc") {
+          return setBInputAmount((usdcBalance / 2).toString());
+        }
+      }
+    },
+    [aBalance, aInputToken, bBalance, bInputToken, solBalance, usdcBalance]
+  );
+
   return (
     <>
       <div className="w-full max-w-7xl mx-auto p-8 flex flex-col">
@@ -598,16 +686,15 @@ export default function Home() {
                 {config.bDisplayNameShort}
               </span>
             </h1>
-            <div className="flex flex-row">
-              <div className="mx-auto md:ml-auto md:mr-0 md:my-0">
-                {" "}
-                {mounted && (
+            {mounted && (
+              <div className="flex flex-row">
+                <div className="mx-auto md:ml-auto md:mr-0 md:my-0">
                   <div className="hidden md:block">
                     <WalletMultiButton />
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         {mounted && (
@@ -653,35 +740,13 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center">
                 <div className="flex flex-row gap-4 w-full mb-2">
                   <button
-                    onClick={() => {
-                      setFetchedAResponseMeta(undefined);
-                      if (aInputToken === "sol") {
-                        return setAInputAmount((solBalance / 2).toString());
-                      }
-                      if (aInputToken === config.bDescriptor) {
-                        return setAInputAmount((bBalance / 2).toString());
-                      }
-                      if (aInputToken === "usdc") {
-                        return setAInputAmount((usdcBalance / 2).toString());
-                      }
-                    }}
+                    onClick={() => setToHalf("b")}
                     className="ml-auto border border-zinc-400 px-2 rounded-lg text-xs"
                   >
                     half
                   </button>
                   <button
-                    onClick={() => {
-                      setFetchedAResponseMeta(undefined);
-                      if (aInputToken === "sol") {
-                        return setAInputAmount(solBalance.toString());
-                      }
-                      if (aInputToken === config.bDescriptor) {
-                        return setAInputAmount(bBalance.toString());
-                      }
-                      if (aInputToken === "usdc") {
-                        return setAInputAmount(usdcBalance.toString());
-                      }
-                    }}
+                    onClick={() => setToMax("a")}
                     className="border border-zinc-400 px-2 rounded-lg text-xs"
                   >
                     max
@@ -781,36 +846,13 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center">
                 <div className="flex flex-row gap-2 w-full mb-2">
                   <button
-                    onClick={() => {
-                      setFetchedBResponseMeta(undefined);
-                      if (bInputToken === "sol") {
-                        return setBInputAmount((solBalance / 2).toString());
-                      }
-                      if (bInputToken === config.aDescriptor) {
-                        return setBInputAmount((aBalance / 2).toString());
-                      }
-                      if (bInputToken === "usdc") {
-                        return setBInputAmount((usdcBalance / 2).toString());
-                      }
-                    }}
+                    onClick={() => setToHalf("b")}
                     className="ml-auto border border-zinc-400 px-2 rounded-lg text-xs"
                   >
                     half
                   </button>
                   <button
-                    onClick={() => {
-                      setFetchedBResponseMeta(undefined);
-
-                      if (bInputToken === "sol") {
-                        return setBInputAmount(solBalance.toString());
-                      }
-                      if (bInputToken === config.aDescriptor) {
-                        return setBInputAmount(aBalance.toString());
-                      }
-                      if (bInputToken === "usdc") {
-                        return setBInputAmount(usdcBalance.toString());
-                      }
-                    }}
+                    onClick={() => setToMax("b")}
                     className="border border-zinc-400 px-2 rounded-lg text-xs"
                   >
                     max
