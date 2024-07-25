@@ -9,7 +9,7 @@ const nextConfig = {
       },
     ];
   },
-  rewrites: [
+  rewrites: () => [
     {
       source: "!.well-known/**",
       destination: "index.html",
@@ -19,7 +19,7 @@ const nextConfig = {
       destination: ".well-known/apple-app-site-association.json",
     },
   ],
-  headers: [
+  headers: () => [
     {
       source: ".well-known/apple-app-site-association",
       headers: [
