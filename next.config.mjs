@@ -9,6 +9,27 @@ const nextConfig = {
       },
     ];
   },
+  rewrites: [
+    {
+      source: "!.well-known/**",
+      destination: "index.html",
+    },
+    {
+      source: ".well-known/apple-app-site-association",
+      destination: ".well-known/apple-app-site-association.json",
+    },
+  ],
+  headers: [
+    {
+      source: ".well-known/apple-app-site-association",
+      headers: [
+        {
+          key: "Content-Type",
+          value: "application/json",
+        },
+      ],
+    },
+  ],
   webpack: (config) => {
     config.resolve.fallback = { fs: false };
 

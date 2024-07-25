@@ -1,6 +1,14 @@
 "use client";
 import { QuoteResponseMeta, useJupiter } from "@jup-ag/react-hook";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import {
+  useBalance,
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   LAMPORTS_PER_SOL,
@@ -26,6 +34,8 @@ import {
   transformedTvl,
   trimDecimals,
 } from "./_util";
+console.log(TOKEN_PROGRAM_ID.toBase58());
+console.log(ASSOCIATED_TOKEN_PROGRAM_ID.toBase58());
 const coingecko = new CoinGeckoClient({
   timeout: 10000,
   autoRetry: true,
@@ -126,6 +136,8 @@ const DECIMALS: Record<string, number> = {
 };
 export default function Home() {
   const wallet = useWallet();
+  const balance = useBalance(wallet.publicKey);
+  console.log(balance);
   const [mounted, setMounted] = useState(false);
   const { connection } = useConnection();
   const [aPrice, setAPrice] = useState("0");
@@ -698,7 +710,7 @@ export default function Home() {
           </div>
         </div>
         {mounted && (
-          <div className=" md:hidden mt-16 w-full flex items-center justify-center">
+          <div className=" aspect-video md:hidden mt-16 w-full flex items-center justify-center">
             <WalletMultiButton />
           </div>
         )}
