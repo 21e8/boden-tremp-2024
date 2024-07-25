@@ -9,19 +9,9 @@ const nextConfig = {
       },
     ];
   },
-  rewrites: () => [
-    {
-      source: "!.well-known/**",
-      destination: "index.html",
-    },
-    {
-      source: ".well-known/apple-app-site-association",
-      destination: ".well-known/apple-app-site-association.json",
-    },
-  ],
   headers: () => [
     {
-      source: ".well-known/apple-app-site-association",
+      source: "/.well-known/apple-app-site-association",
       headers: [
         {
           key: "Content-Type",
