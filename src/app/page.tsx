@@ -4,11 +4,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import {
-  useBalance,
-  useConnection,
-  useWallet,
-} from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import {
   LAMPORTS_PER_SOL,
@@ -136,8 +132,6 @@ const DECIMALS: Record<string, number> = {
 };
 export default function Home() {
   const wallet = useWallet();
-  const balance = useBalance(wallet.publicKey);
-  console.log(balance);
   const [mounted, setMounted] = useState(false);
   const { connection } = useConnection();
   const [aPrice, setAPrice] = useState("0");
